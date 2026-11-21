@@ -1,4 +1,3 @@
-robka
 from robka import Robot
 from robka.button import InlineBuilder
 
