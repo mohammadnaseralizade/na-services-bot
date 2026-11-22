@@ -41,7 +41,6 @@ B_IRAN = "سایت شورای فرامنطقه ایران"
 B_APF = "شورای فرامنطقه APF"
 B_EDM = "شورای فرامنطقه EDM"
 B_GLOBAL = "ارتباط با کنفرانس خدمات جهانی NA"
-B_SHOP = "فروشگاه آنلاین (پرداخت)"
 B_BACK = "بازگشت به منوی اصلی"
 
 # متن دکمه -> (عنوان، لینک)
@@ -50,7 +49,6 @@ SITES = {
     B_IRAN: ("سایت شورای فرامنطقه ایران", "https://nairan.org/"),
     B_APF: ("شورای فرامنطقه APF", "https://fa.apfna.org/"),
     B_EDM: ("شورای فرامنطقه EDM", "https://www.edmna.org/"),
-    B_SHOP: ("فروشگاه آنلاین (پرداخت)", "https://asan.shaparak.ir/"),
 }
 
 # متن دکمه -> (عنوان، ایمیل)
@@ -107,7 +105,6 @@ def email_keypad() -> Keypad:
     rows = []
     for i in range(0, len(names), 2):
         rows.append(KeypadRow(buttons=[btn(n) for n in names[i:i + 2]]))
-    rows.append(KeypadRow(buttons=[btn(B_SHOP)]))
     rows.append(KeypadRow(buttons=[btn(B_BACK)]))
     return Keypad(rows=rows, resize_keyboard=True)
 
