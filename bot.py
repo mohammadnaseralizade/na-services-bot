@@ -136,6 +136,37 @@ async def start(client, update: Update):
     await send(update, WELCOME_TEXT, main_keypad())
 
 
+@app.on_update(filters.commands("test5"))
+async def test5(client, update: Update):
+    out = []
+    chat_id = update.chat_id
+
+    def kp(button):
+        return {"rows": [{"buttons": [button]}]}
+
+    variants = {
+        "r1_https": {"id": "a", "type": "Link", "button_text": "سایت (https)",
+                     "button_link": {"type": "url", "link_url": "https://nairan.org/"}},
+        "r2_noslash": {"id": "b", "type": "Link", "button_text": "سایت بدون اسلش",
+                       "button_link": {"type": "url", "link_url": "https://nairan.org"}},
+        "r3_mailto": {"id": "c", "type": "Link", "button_text": "ایمیل",
+                      "button_link": {"type": "url", "link_url": "mailto:fsmail@na.org"}},
+    }
+    for name, button in variants.items():
+        payload = {
+            "chat_id": chat_id,
+            "text": "تست " + name,
+            "inline_keypad": kp(button),
+        }
+        try:
+            await client._make_request("sendMessage", payload)
+            out.append(name + ": OK")
+        except Exception as e:
+            out.append(name + ": FAIL " + repr(e)[:120])
+
+    await send(update, "\n".join(out))
+
+
 # مسیریاب پیام‌های متنی (کلیک دکمه‌های کیبورد چت به‌صورت پیام متنی می‌رسد)
 # باید آخرین هندلر باشد.
 @app.on_update()
