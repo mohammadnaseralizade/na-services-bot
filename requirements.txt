@@ -1,3 +1,2 @@
-text
-    rubpy
+rubpy
 requests==2.31.0
