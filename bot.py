@@ -2,10 +2,9 @@ import os
 from rubpy.bot import BotClient, filters
 from rubpy.bot.models import Keypad, KeypadRow, Button, Update
 
-# ⚠️ توکن ربات و آدرس وبهوک را از متغیرهای محیطی می‌خوانیم
-# هرگز توکن را داخل کد ننویسید!
-TOKEN = os.getenv("CJGHBB0DTAERTQQLKDBNELIGTYHNGIOWHPSPZUCLOVQKPQLIGKSIBSQBUUQOABZR")
-WEBHOOK_URL = os.getenv("https://na-bot-478038e06ee7.sam.apps.haiocloud.com/webhook")
+# ⚠️ نام متغیرهای محیطی را اینجا قرار می‌دهیم (همان نام‌هایی که در پنل هاست ساختید)
+TOKEN = os.getenv("BOT_TOKEN")
+WEBHOOK_URL = os.getenv("WEBHOOK_URL")
 
 if not TOKEN or not WEBHOOK_URL:
     print("❌ خطا: متغیرهای محیطی BOT_TOKEN و WEBHOOK_URL تنظیم نشده‌اند.")
@@ -73,8 +72,6 @@ async def global_services(client, update: Update):
 
 @app.on_update(filters.button("back_to_main"))
 async def back_to_main(client, update: Update):
-    # به جای صدا زدن تابع start، یک پیام ساده برای راهنمایی می‌فرستیم که کاربر دوباره /start بزند
-    # یا می‌توانید دقیقاً همان کیپد اصلی را دوباره اینجا بسازید.
     await update.reply("برای مشاهده مجدد منوی اصلی، لطفاً دستور /start را ارسال کنید.")
 
 # ---------------------------------------------------------
@@ -83,8 +80,6 @@ async def back_to_main(client, update: Update):
 if __name__ == "__main__":
     print("✅ ربات با موفقیت در حالت وبهوک اجرا شد.")
     
-    # خواندن پورت از متغیرهای محیطی (هاست‌های ابری معمولاً پورت را خودشان تعیین می‌کنند)
     PORT = int(os.getenv("PORT", 8080))
     
-    # اجرای ربات فقط با یک دستور
     app.run(webhook_url=WEBHOOK_URL, path="/webhook", host="0.0.0.0", port=PORT)
