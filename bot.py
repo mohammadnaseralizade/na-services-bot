@@ -45,20 +45,12 @@ app = BotClient(TOKEN, max_retries=10)
 # ---------------------------------------------------------
 def link_button(btn_id: str, text: str, url: str) -> Button:
     """دکمه لینک (فقط http/https)"""
-    if ButtonLink is not None:
-        return Button(
-            id=btn_id,
-            type="Link",
-            button_text=text,
-            button_link=ButtonLink(type="url", link_url=url),
-        )
-    # fallback برای نسخه‌هایی که ساختار متفاوتی دارند
-    return Button(id=btn_id, type="Link", button_text=text, url=url)
+    def link_button(btn_id: str, text: str, url: str) -> Button:
+    return Button(id=btn_id, button_text=text, type="link", url=url)
 
 
 def simple_button(btn_id: str, text: str) -> Button:
-    """دکمه معمولی که کلیکش آپدیت به ربات می‌فرستد"""
-    return Button(id=btn_id, type="Simple", button_text=text)
+    return Button(id=btn_id, button_text=text)
 
 
 # ---------------------------------------------------------
