@@ -33,8 +33,8 @@ except Exception:
 TOKEN = os.getenv("BOT_TOKEN")
 WEBHOOK_URL = os.getenv("WEBHOOK_URL")
 
-if not TOKEN or not WEBHOOK_URL:
-    log("❌ خطا: متغیرهای محیطی BOT_TOKEN و WEBHOOK_URL تنظیم نشده‌اند.")
+if not TOKEN:
+    log("❌ خطا: متغیر محیطی BOT_TOKEN تنظیم نشده است.")
     sys.exit(1)
 
 app = BotClient(TOKEN, max_retries=10)
