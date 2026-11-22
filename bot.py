@@ -85,3 +85,4 @@ if __name__ == "__main__":
     print("✅ ربات با موفقیت در حالت وبهوک اجرا شد.")
     # متد run در rubpy به صورت خودکار تنظیمات وبهوک را انجام می‌دهد
     app.run(webhook_url=WEBHOOK_URL, path="/webhook", host="0.0.0.0", port=8080)
+app.run()
