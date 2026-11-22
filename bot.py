@@ -225,6 +225,48 @@ async def test2(client, update: Update):
 @app.on_update()
 async def debug_all(client, update: Update):
     log("UPDATE:", repr(update)[:600])
+import rubpy.bot.enums as E
+
+
+@app.on_update(filters.commands("test3"))
+async def test3(client, update: Update):
+    out = []
+    for n in dir(E):
+        if "Button" in n and not n.startswith("_"):
+            try:
+                members = [m.name + "=" + str(m.value) for m in getattr(E, n)]
+                out.append(n + ": " + ", ".join(members)[:300])
+            except Exception as e:
+                out.append(n + " err " + repr(e)[:60])
+    out.append("reply" + str(inspect.signature(update.reply)))
+
+    U = "https://nairan.org/"
+    TE = E.ButtonTypeEnum
+    variants = {
+        "e1": lambda: Button(id="a", type=TE.Link, button_text="x",
+                             button_link=ButtonLink(type="url", link_url=U)),
+        "e2": lambda: Button(id="a", type=TE.Link, button_text="x",
+                             button_link=ButtonLink(type="Url", link_url=U)),
+    }
+    for name, make in variants.items():
+        try:
+            kp = Keypad(rows=[KeypadRow(buttons=[make()])])
+            await update.reply("تست " + name, inline_keypad=kp)
+            out.append(name + ": OK")
+        except Exception as e:
+            out.append(name + ": FAIL " + repr(e)[:100])
+
+    try:
+        ck = Keypad(
+            rows=[KeypadRow(buttons=[simple_button("c1", "گزینه یک")])],
+            resize_keyboard=True,
+        )
+        await update.reply("کیبورد چت", chat_keypad=ck, chat_keypad_type="New")
+        out.append("chat_keypad: OK")
+    except Exception as e:
+        out.append("chat_keypad: FAIL " + repr(e)[:100])
+
+    await update.reply("\n".join(out))
 if __name__ == "__main__":
     log("✅ ربات در حالت polling اجرا شد")
     try:
