@@ -1,6 +1,5 @@
 import os
 import sys
-import inspect
 import traceback
 
 try:
@@ -19,15 +18,11 @@ log("🚀 شروع برنامه...")
 try:
     from rubpy.bot import BotClient, filters
     from rubpy.bot.models import Keypad, KeypadRow, Button, Update
+    from rubpy.bot.enums import ButtonTypeEnum, ChatKeypadTypeEnum
 except Exception:
     log("❌ خطا در ایمپورت rubpy:")
     traceback.print_exc()
     sys.exit(1)
-
-try:
-    from rubpy.bot.models import ButtonLink
-except Exception:
-    ButtonLink = None
 
 TOKEN = os.getenv("BOT_TOKEN")
 
@@ -35,105 +30,97 @@ if not TOKEN:
     log("❌ خطا: متغیر محیطی BOT_TOKEN تنظیم نشده است.")
     sys.exit(1)
 
-try:
-    log("ℹ️ Button:", inspect.signature(Button.__init__))
-    if ButtonLink is not None:
-        log("ℹ️ ButtonLink:", inspect.signature(ButtonLink.__init__))
-    else:
-        log("ℹ️ ButtonLink وجود ندارد")
-    log("ℹ️ Keypad:", inspect.signature(Keypad.__init__))
-except Exception:
-    pass
-
 app = BotClient(TOKEN, max_retries=10)
 
 
 # ---------------------------------------------------------
-# ساخت دکمه
+# متن دکمه‌ها
 # ---------------------------------------------------------
-def simple_button(btn_id: str, text: str) -> Button:
-    return Button(id=btn_id, button_text=text, type="Simple")
+B_ONLINE = "اطلاع از جلسات آنلاین NA"
+B_IRAN = "سایت شورای فرامنطقه ایران"
+B_APF = "شورای فرامنطقه APF"
+B_EDM = "شورای فرامنطقه EDM"
+B_GLOBAL = "ارتباط با کنفرانس خدمات جهانی NA"
+B_SHOP = "فروشگاه آنلاین (پرداخت)"
+B_BACK = "بازگشت به منوی اصلی"
 
+# متن دکمه -> (عنوان، لینک)
+SITES = {
+    B_ONLINE: ("جلسات آنلاین NA", "https://nairan1.org/onlinemeeting/"),
+    B_IRAN: ("سایت شورای فرامنطقه ایران", "https://nairan.org/"),
+    B_APF: ("شورای فرامنطقه APF", "https://fa.apfna.org/"),
+    B_EDM: ("شورای فرامنطقه EDM", "https://www.edmna.org/"),
+    B_SHOP: ("فروشگاه آنلاین (پرداخت)", "https://asan.shaparak.ir/"),
+}
 
-def link_button(btn_id: str, text: str, url: str) -> Button:
-    # فعلاً دکمه ساده است؛ با کلیک، لینک در پیام ارسال می‌شود
-    return Button(id=f"url_{btn_id}", button_text=text, type="Simple")
-
-
-# لینک‌ها: id -> (متن، آدرس)
-LINKS = {}
-
-
-def L(btn_id, text, url):
-    LINKS[f"url_{btn_id}"] = (text, url)
-    return link_button(btn_id, text, url)
-
-
-# ---------------------------------------------------------
-# منوها
-# ---------------------------------------------------------
-def main_menu() -> Keypad:
-    return Keypad(rows=[
-        KeypadRow(buttons=[
-            L("online", "اطلاع از جلسات آنلاین NA", "https://nairan1.org/onlinemeeting/")
-        ]),
-        KeypadRow(buttons=[
-            L("iran", "سایت شورای فرامنطقه ایران", "https://nairan.org/"),
-            L("apf", "شورای فرامنطقه APF", "https://fa.apfna.org/"),
-        ]),
-        KeypadRow(buttons=[
-            L("edm", "شورای فرامنطقه EDM", "https://www.edmna.org/")
-        ]),
-        KeypadRow(buttons=[
-            simple_button("global_services", "ارتباط با کنفرانس خدمات جهانی NA")
-        ]),
-    ])
-
-
-EMAIL_ITEMS = [
-    ("fsmail", "اطلاعات عمومی و فلووشیپ", "fsmail@na.org"),
-    ("cust", "خدمات مشتری (سفارشات)", "customer_service@na.org"),
-    ("wb", "هیئت جهانی (World Board)", "worldboard@na.org"),
-    ("hr", "منابع انسانی (HR)", "hrp@na.org"),
-    ("pr", "روابط عمومی (PR)", "pr@na.org"),
-    ("handi", "بیمارستان‌ها و موسسات (H&I)", "handi@na.org"),
-    ("web", "وب‌سایت (Webmaster)", "webmaster@na.org"),
-    ("events", "رویدادها و کنوانسیون‌ها", "events@na.org"),
-    ("naway", "مجله The NA Way", "naway@na.org"),
-    ("contrib", "کمک‌های مالی", "contributions@na.org"),
-    ("jobs", "فرصت‌های شغلی", "jobs@na.org"),
-]
-
-
-def email_menu() -> Keypad:
-    rows = []
-    for i in range(0, len(EMAIL_ITEMS), 2):
-        chunk = EMAIL_ITEMS[i:i + 2]
-        rows.append(KeypadRow(buttons=[
-            simple_button(f"mail_{b_id}", text) for b_id, text, _ in chunk
-        ]))
-    rows.append(KeypadRow(buttons=[simple_button("shop", "فروشگاه آنلاین (پرداخت)")]))
-    rows.append(KeypadRow(buttons=[simple_button("back_to_main", "بازگشت به منوی اصلی")]))
-    return Keypad(rows=rows)
-
+# متن دکمه -> (عنوان، ایمیل)
+EMAILS = {
+    "اطلاعات عمومی و فلووشیپ": "fsmail@na.org",
+    "خدمات مشتری (سفارشات)": "customer_service@na.org",
+    "هیئت جهانی (World Board)": "worldboard@na.org",
+    "منابع انسانی (HR)": "hrp@na.org",
+    "روابط عمومی (PR)": "pr@na.org",
+    "بیمارستان‌ها و موسسات (H&I)": "handi@na.org",
+    "وب‌سایت (Webmaster)": "webmaster@na.org",
+    "رویدادها و کنوانسیون‌ها": "events@na.org",
+    "مجله The NA Way": "naway@na.org",
+    "کمک‌های مالی": "contributions@na.org",
+    "فرصت‌های شغلی": "jobs@na.org",
+}
 
 WELCOME_TEXT = (
     "به مرکز خدمات و منابع انجمن معتادان گمنام NA خوش آمدید.\n"
     "لطفاً یکی از گزینه‌های زیر را انتخاب کنید:"
 )
 
+EMAIL_TEXT = (
+    "بخش‌های ارتباطی خدمات جهانی NA\n"
+    "روی هر دکمه بزنید تا آدرس ایمیل آن بخش برای شما ارسال شود."
+)
+
 
 # ---------------------------------------------------------
-# هندلرها
+# ساخت کیبورد چت
 # ---------------------------------------------------------
-async def safe_reply(update, text, keypad=None):
+_counter = [0]
+
+
+def btn(text: str) -> Button:
+    _counter[0] += 1
+    return Button(id=f"b{_counter[0]}", type=ButtonTypeEnum.SIMPLE, button_text=text)
+
+
+def main_keypad() -> Keypad:
+    return Keypad(
+        rows=[
+            KeypadRow(buttons=[btn(B_ONLINE)]),
+            KeypadRow(buttons=[btn(B_IRAN), btn(B_APF)]),
+            KeypadRow(buttons=[btn(B_EDM)]),
+            KeypadRow(buttons=[btn(B_GLOBAL)]),
+        ],
+        resize_keyboard=True,
+    )
+
+
+def email_keypad() -> Keypad:
+    names = list(EMAILS.keys())
+    rows = []
+    for i in range(0, len(names), 2):
+        rows.append(KeypadRow(buttons=[btn(n) for n in names[i:i + 2]]))
+    rows.append(KeypadRow(buttons=[btn(B_SHOP)]))
+    rows.append(KeypadRow(buttons=[btn(B_BACK)]))
+    return Keypad(rows=rows, resize_keyboard=True)
+
+
+async def send(update: Update, text: str, keypad: Keypad = None):
     try:
         if keypad is not None:
-            await update.reply(text, inline_keypad=keypad)
+            await update.reply(text, chat_keypad=keypad,
+                               chat_keypad_type=ChatKeypadTypeEnum.NEW)
         else:
             await update.reply(text)
     except Exception as e:
-        log("❌ خطا در ارسال پیام با دکمه:", repr(e))
+        log("❌ خطا در ارسال پیام:", repr(e))
         traceback.print_exc()
         try:
             await update.reply(text)
@@ -141,165 +128,38 @@ async def safe_reply(update, text, keypad=None):
             traceback.print_exc()
 
 
+# ---------------------------------------------------------
+# هندلرها
+# ---------------------------------------------------------
 @app.on_update(filters.commands("start"))
 async def start(client, update: Update):
-    await safe_reply(update, WELCOME_TEXT, main_menu())
+    await send(update, WELCOME_TEXT, main_keypad())
 
 
-@app.on_update(filters.button("global_services"))
-async def global_services(client, update: Update):
-    text = (
-        "بخش‌های ارتباطی خدمات جهانی NA\n"
-        "روی هر دکمه بزنید تا آدرس ایمیل آن بخش برای شما ارسال شود."
-    )
-    await safe_reply(update, text, email_menu())
-
-
-def make_email_handler(btn_id, title, email):
-    @app.on_update(filters.button(f"mail_{btn_id}"))
-    async def handler(client, update: Update):
-        await safe_reply(update, f"{title}\n📧 {email}")
-    return handler
-
-
-for _id, _title, _email in EMAIL_ITEMS:
-    make_email_handler(_id, _title, _email)
-
-
-def make_url_handler(btn_id, title, url):
-    @app.on_update(filters.button(btn_id))
-    async def handler(client, update: Update):
-        await safe_reply(update, f"{title}\n{url}")
-    return handler
-
-
-# ساخت یک‌باره منو تا LINKS پر شود، سپس ثبت هندلر لینک‌ها
-main_menu()
-for _bid, (_t, _u) in list(LINKS.items()):
-    make_url_handler(_bid, _t, _u)
-
-
-@app.on_update(filters.button("shop"))
-async def shop(client, update: Update):
-    await safe_reply(update, "فروشگاه آنلاین (پرداخت):\nhttps://asan.shaparak.ir/")
-
-
-@app.on_update(filters.button("back_to_main"))
-async def back_to_main(client, update: Update):
-    await safe_reply(update, WELCOME_TEXT, main_menu())
-
-
-# ---------------------------------------------------------
-# تست‌های تشخیصی
-# ---------------------------------------------------------
-@app.on_update(filters.commands("test3"))
-async def test3(client, update: Update):
-    out = []
-    try:
-        import rubpy.bot.enums as E
-        for n in dir(E):
-            if "Button" in n and not n.startswith("_"):
-                try:
-                    members = [m.name + "=" + str(m.value) for m in getattr(E, n)]
-                    out.append(n + ": " + ", ".join(members)[:300])
-                except Exception as e:
-                    out.append(n + " err " + repr(e)[:60])
-    except Exception as e:
-        out.append("enums err " + repr(e)[:100])
-
-    try:
-        out.append("reply" + str(inspect.signature(update.reply)))
-    except Exception as e:
-        out.append("sig err " + repr(e)[:60])
-
-    U = "https://nairan.org/"
-    try:
-        import rubpy.bot.enums as E
-        TE = E.ButtonTypeEnum
-        variants = {
-            "e1": lambda: Button(id="a", type=TE.Link, button_text="x",
-                                 button_link=ButtonLink(type="url", link_url=U)),
-        }
-        for name, make in variants.items():
-            try:
-                kp = Keypad(rows=[KeypadRow(buttons=[make()])])
-                await update.reply("تست " + name, inline_keypad=kp)
-                out.append(name + ": OK")
-            except Exception as e:
-                out.append(name + ": FAIL " + repr(e)[:100])
-    except Exception as e:
-        out.append("enum test err " + repr(e)[:100])
-
-    try:
-        ck = Keypad(
-            rows=[KeypadRow(buttons=[simple_button("c1", "گزینه یک")])],
-            resize_keyboard=True,
-        )
-        await update.reply("کیبورد چت", chat_keypad=ck, chat_keypad_type="New")
-        out.append("chat_keypad: OK")
-    except Exception as e:
-        out.append("chat_keypad: FAIL " + repr(e)[:100])
-
-    await safe_reply(update, "\n".join(out))
-
-
-@app.on_update(filters.commands("test4"))
-async def test4(client, update: Update):
-    import rubpy.bot.enums as E
-    TE = E.ButtonTypeEnum
-    CK = E.ChatKeypadTypeEnum
-    out = []
-    out.append("types: " + ", ".join(m.name for m in TE))
-    out.append("chatkp: " + ", ".join(m.name for m in CK))
-
-    def by_value(enum, v):
-        for m in enum:
-            if str(m.value).lower() == v:
-                return m
-        return None
-
-    link_t = by_value(TE, "link")
-    out.append("link member: " + str(link_t))
-    U = "https://nairan.org/"
-
-    if link_t is not None:
-        variants = {
-            "l1": lambda: Button(
-                id="a", type=link_t, button_text="لینک یک",
-                button_link=ButtonLink(type=E.ButtonLinkTypeEnum.URL, link_url=U)),
-            "l2": lambda: Button(
-                id="b", type=link_t, button_text="لینک دو",
-                button_link=ButtonLink(type="url", link_url=U)),
-        }
-        for name, make in variants.items():
-            try:
-                kp = Keypad(rows=[KeypadRow(buttons=[make()])])
-                await update.reply("تست " + name, inline_keypad=kp)
-                out.append(name + ": OK")
-            except Exception as e:
-                out.append(name + ": FAIL " + repr(e)[:100])
-
-    new_t = by_value(CK, "new")
-    try:
-        ck = Keypad(
-            rows=[KeypadRow(buttons=[
-                Button(id="c1", type=TE.SIMPLE, button_text="گزینه یک"),
-                Button(id="c2", type=TE.SIMPLE, button_text="گزینه دو"),
-            ])],
-            resize_keyboard=True,
-        )
-        await update.reply("کیبورد چت", chat_keypad=ck, chat_keypad_type=new_t)
-        out.append("chat_keypad: OK")
-    except Exception as e:
-        out.append("chat_keypad: FAIL " + repr(e)[:100])
-
-    await safe_reply(update, "\n".join(out))
-
-
-# هندلر دیباگ باید آخرین هندلر باشد
+# مسیریاب پیام‌های متنی (کلیک دکمه‌های کیبورد چت به‌صورت پیام متنی می‌رسد)
+# باید آخرین هندلر باشد.
 @app.on_update()
-async def debug_all(client, update: Update):
-    log("UPDATE:", repr(update)[:600])
+async def router(client, update: Update):
+    try:
+        msg = update.new_message
+        text = (msg.text or "").strip() if msg else ""
+    except Exception:
+        return
+
+    if not text or text.startswith("/"):
+        return
+
+    if text == B_GLOBAL:
+        await send(update, EMAIL_TEXT, email_keypad())
+    elif text == B_BACK:
+        await send(update, WELCOME_TEXT, main_keypad())
+    elif text in SITES:
+        title, url = SITES[text]
+        await send(update, f"{title}\n{url}")
+    elif text in EMAILS:
+        await send(update, f"{text}\n📧 {EMAILS[text]}")
+    else:
+        await send(update, WELCOME_TEXT, main_keypad())
 
 
 # ---------------------------------------------------------
