@@ -1,6 +1,4 @@
-robka==2.3.4
-tqdm
-mutagen
+rubpy
 filetype
 pycryptodome
 Pillow
