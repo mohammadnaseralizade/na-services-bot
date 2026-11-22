@@ -7,7 +7,7 @@ TOKEN = os.getenv("BOT_TOKEN", "CJGHBB0DTAERTQQLKDBNELIGTYHNGIOWHPSPZUCLOVQKPQLI
 WEBHOOK_URL = os.getenv("WEBHOOK_URL", "https://na-bot-478038e06ee7.sam.apps.haiocloud.com/webhook")
 
 # تنظیم آدرس وبهوک برای rubpy
-app = BotClient(TOKEN)
+app = BotClient(TOKEN, max_retries=10)
 
 # ---------------------------------------------------------
 # ۱. منوی اصلی (شروع ربات)
