@@ -1,85 +1,189 @@
 import os
-from rubpy.bot import BotClient, filters
-from rubpy.bot.models import Keypad, KeypadRow, Button, Update
+import sys
+import traceback
 
-# ⚠️ نام متغیرهای محیطی را اینجا قرار می‌دهیم (همان نام‌هایی که در پنل هاست ساختید)
+# خروجی بدون بافر تا لاگ هاست فوراً نمایش داده شود
+try:
+    sys.stdout.reconfigure(line_buffering=True)
+    sys.stderr.reconfigure(line_buffering=True)
+except Exception:
+    pass
+
+
+def log(*args):
+    print(*args, flush=True)
+
+
+log("🚀 شروع برنامه...")
+
+try:
+    from rubpy.bot import BotClient, filters
+    from rubpy.bot.models import Keypad, KeypadRow, Button, Update
+except Exception:
+    log("❌ خطا در ایمپورت rubpy (نصب یا نسخه را بررسی کنید):")
+    traceback.print_exc()
+    sys.exit(1)
+
+# ButtonLink در بعضی نسخه‌ها وجود دارد (برای دکمه‌های لینک)
+try:
+    from rubpy.bot.models import ButtonLink
+except Exception:
+    ButtonLink = None
+
 TOKEN = os.getenv("BOT_TOKEN")
 WEBHOOK_URL = os.getenv("WEBHOOK_URL")
 
 if not TOKEN or not WEBHOOK_URL:
-    print("❌ خطا: متغیرهای محیطی BOT_TOKEN و WEBHOOK_URL تنظیم نشده‌اند.")
-    exit(1)
+    log("❌ خطا: متغیرهای محیطی BOT_TOKEN و WEBHOOK_URL تنظیم نشده‌اند.")
+    sys.exit(1)
 
 app = BotClient(TOKEN, max_retries=10)
 
+
 # ---------------------------------------------------------
-# ۱. منوی اصلی (شروع ربات)
+# توابع کمکی برای ساخت دکمه
+# ---------------------------------------------------------
+def link_button(btn_id: str, text: str, url: str) -> Button:
+    """دکمه لینک (فقط http/https)"""
+    if ButtonLink is not None:
+        return Button(
+            id=btn_id,
+            type="Link",
+            button_text=text,
+            button_link=ButtonLink(type="url", link_url=url),
+        )
+    # fallback برای نسخه‌هایی که ساختار متفاوتی دارند
+    return Button(id=btn_id, type="Link", button_text=text, url=url)
+
+
+def simple_button(btn_id: str, text: str) -> Button:
+    """دکمه معمولی که کلیکش آپدیت به ربات می‌فرستد"""
+    return Button(id=btn_id, type="Simple", button_text=text)
+
+
+# ---------------------------------------------------------
+# منوها
+# ---------------------------------------------------------
+def main_menu() -> Keypad:
+    return Keypad(
+        rows=[
+            KeypadRow(buttons=[
+                link_button("online", "اطلاع از جلسات آنلاین NA",
+                            "https://nairan1.org/onlinemeeting/")
+            ]),
+            KeypadRow(buttons=[
+                link_button("iran", "سایت شورای فرامنطقه ایران", "https://nairan.org/"),
+                link_button("apf", "شورای فرامنطقه APF", "https://fa.apfna.org/"),
+            ]),
+            KeypadRow(buttons=[
+                link_button("edm", "شورای فرامنطقه EDM", "https://www.edmna.org/")
+            ]),
+            KeypadRow(buttons=[
+                simple_button("global_services", "ارتباط با کنفرانس خدمات جهانی NA")
+            ]),
+        ],
+        resize_keyboard=True,
+    )
+
+
+# ایمیل‌ها: (id, متن دکمه, آدرس ایمیل)
+# چون روبیکا لینک mailto را معمولاً نمی‌پذیرد، با کلیک، آدرس ایمیل ارسال می‌شود.
+EMAIL_ITEMS = [
+    ("fsmail", "اطلاعات عمومی و فلووشیپ", "fsmail@na.org"),
+    ("cust", "خدمات مشتری (سفارشات)", "customer_service@na.org"),
+    ("wb", "هیئت جهانی (World Board)", "worldboard@na.org"),
+    ("hr", "منابع انسانی (HR)", "hrp@na.org"),
+    ("pr", "روابط عمومی (PR)", "pr@na.org"),
+    ("handi", "بیمارستان‌ها و موسسات (H&I)", "handi@na.org"),
+    ("web", "وب‌سایت (Webmaster)", "webmaster@na.org"),
+    ("events", "رویدادها و کنوانسیون‌ها", "events@na.org"),
+    ("naway", "مجله The NA Way", "naway@na.org"),
+    ("contrib", "کمک‌های مالی", "contributions@na.org"),
+    ("jobs", "فرصت‌های شغلی", "jobs@na.org"),
+]
+
+
+def email_menu() -> Keypad:
+    rows = []
+    # دو دکمه در هر ردیف
+    for i in range(0, len(EMAIL_ITEMS), 2):
+        chunk = EMAIL_ITEMS[i:i + 2]
+        rows.append(KeypadRow(buttons=[
+            simple_button(f"mail_{b_id}", text) for b_id, text, _ in chunk
+        ]))
+    rows.append(KeypadRow(buttons=[simple_button("shop", "فروشگاه آنلاین (پرداخت)")]))
+    rows.append(KeypadRow(buttons=[simple_button("back_to_main", "بازگشت به منوی اصلی")]))
+    return Keypad(rows=rows, resize_keyboard=True)
+
+
+WELCOME_TEXT = (
+    "به مرکز خدمات و منابع انجمن معتادان گمنام NA خوش آمدید.\n"
+    "لطفاً یکی از گزینه‌های زیر را انتخاب کنید:"
+)
+
+
+# ---------------------------------------------------------
+# هندلرها
 # ---------------------------------------------------------
 @app.on_update(filters.commands("start"))
 async def start(client, update: Update):
-    keypad = Keypad(
-        rows=[
-            KeypadRow(buttons=[Button(id="online", button_text="اطلاع از جلسات آنلاین NA", type="link", url="https://nairan1.org/onlinemeeting/")]),
-            KeypadRow(buttons=[
-                Button(id="iran", button_text="سایت شورای فرامنطقه ایران", type="link", url="https://nairan.org/"),
-                Button(id="apf", button_text="شورای فرامنطقه APF", type="link", url="https://fa.apfna.org/")
-            ]),
-            KeypadRow(buttons=[Button(id="edm", button_text="شورای فرامنطقه EDM", type="link", url="https://www.edmna.org/")]),
-            KeypadRow(buttons=[Button(id="global_services", button_text="ارتباط با کنفرانس خدمات جهانی NA")])
-        ],
-        resize_keyboard=True
-    )
+    try:
+        await update.reply(WELCOME_TEXT, inline_keypad=main_menu())
+    except Exception:
+        traceback.print_exc()
 
-    welcome_text = "به مرکز خدمات و منابع انجمن معتادان گمنام NA خوش آمدید.\nلطفاً یکی از گزینه‌های زیر را انتخاب کنید:"
-    await update.reply(welcome_text, inline_keypad=keypad)
 
-# ---------------------------------------------------------
-# ۲. مدیریت کلیک روی دکمه‌ها
-# ---------------------------------------------------------
 @app.on_update(filters.button("global_services"))
 async def global_services(client, update: Update):
-    email_keypad = Keypad(
-        rows=[
-            KeypadRow(buttons=[Button(id="fsmail", button_text="اطلاعات عمومی و فلووشیپ", type="link", url="mailto:fsmail@na.org")]),
-            KeypadRow(buttons=[
-                Button(id="cust", button_text="خدمات مشتری (سفارشات)", type="link", url="mailto:customer_service@na.org"),
-                Button(id="shop", button_text="فروشگاه آنلاین (پرداخت)", type="link", url="https://asan.shaparak.ir/")
-            ]),
-            KeypadRow(buttons=[Button(id="wb", button_text="هیئت جهانی (World Board)", type="link", url="mailto:worldboard@na.org")]),
-            KeypadRow(buttons=[
-                Button(id="hr", button_text="منابع انسانی (HR)", type="link", url="mailto:hrp@na.org"),
-                Button(id="pr", button_text="روابط عمومی (PR)", type="link", url="mailto:pr@na.org")
-            ]),
-            KeypadRow(buttons=[
-                Button(id="handi", button_text="بیمارستان‌ها و موسسات (H&I)", type="link", url="mailto:handi@na.org"),
-                Button(id="web", button_text="وب‌سایت (Webmaster)", type="link", url="mailto:webmaster@na.org")
-            ]),
-            KeypadRow(buttons=[
-                Button(id="events", button_text="رویدادها و کنوانسیون‌ها", type="link", url="mailto:events@na.org"),
-                Button(id="naway", button_text="مجله The NA Way", type="link", url="mailto:naway@na.org")
-            ]),
-            KeypadRow(buttons=[
-                Button(id="contrib", button_text="کمک‌های مالی", type="link", url="mailto:contributions@na.org"),
-                Button(id="jobs", button_text="فرصت‌های شغلی", type="link", url="mailto:jobs@na.org")
-            ]),
-            KeypadRow(buttons=[Button(id="back_to_main", button_text="بازگشت به منوی اصلی")])
-        ],
-        resize_keyboard=True
-    )
-    
-    email_text = "بخش‌های ارتباطی خدمات جهانی NA\nبا کلیک روی هر دکمه، اپلیکیشن ایمیل گوشی شما باز خواهد شد."
-    await update.reply(email_text, inline_keypad=email_keypad)
+    try:
+        text = (
+            "بخش‌های ارتباطی خدمات جهانی NA\n"
+            "روی هر دکمه بزنید تا آدرس ایمیل آن بخش برای شما ارسال شود."
+        )
+        await update.reply(text, inline_keypad=email_menu())
+    except Exception:
+        traceback.print_exc()
+
+
+def make_email_handler(btn_id: str, title: str, email: str):
+    @app.on_update(filters.button(f"mail_{btn_id}"))
+    async def handler(client, update: Update):
+        try:
+            await update.reply(f"{title}\n📧 {email}")
+        except Exception:
+            traceback.print_exc()
+    return handler
+
+
+for _id, _title, _email in EMAIL_ITEMS:
+    make_email_handler(_id, _title, _email)
+
+
+@app.on_update(filters.button("shop"))
+async def shop(client, update: Update):
+    try:
+        await update.reply("فروشگاه آنلاین (پرداخت):\nhttps://asan.shaparak.ir/")
+    except Exception:
+        traceback.print_exc()
+
 
 @app.on_update(filters.button("back_to_main"))
 async def back_to_main(client, update: Update):
-    await update.reply("برای مشاهده مجدد منوی اصلی، لطفاً دستور /start را ارسال کنید.")
+    try:
+        await update.reply(WELCOME_TEXT, inline_keypad=main_menu())
+    except Exception:
+        traceback.print_exc()
+
 
 # ---------------------------------------------------------
-# ۳. اجرای ربات (فقط یک بار و در حالت وبهوک)
+# اجرا (وبهوک)
 # ---------------------------------------------------------
 if __name__ == "__main__":
-    print("✅ ربات با موفقیت در حالت وبهوک اجرا شد.")
-    
     PORT = int(os.getenv("PORT", 8080))
-    
-    app.run(webhook_url=WEBHOOK_URL, path="/webhook", host="0.0.0.0", port=PORT)
+    log(f"✅ در حال اجرا روی پورت {PORT} | وبهوک: {WEBHOOK_URL}")
+    try:
+        app.run(webhook_url=WEBHOOK_URL, path="/webhook", host="0.0.0.0", port=PORT)
+    except Exception:
+        log("❌ خطا هنگام اجرای app.run:")
+        traceback.print_exc()
+        sys.exit(1)
