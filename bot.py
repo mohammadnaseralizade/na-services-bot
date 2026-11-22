@@ -222,6 +222,9 @@ async def test2(client, update: Update):
 # ---------------------------------------------------------
 # اجرا (polling)
 # ---------------------------------------------------------
+@app.on_update()
+async def debug_all(client, update: Update):
+    log("UPDATE:", repr(update)[:600])
 if __name__ == "__main__":
     log("✅ ربات در حالت polling اجرا شد")
     try:
