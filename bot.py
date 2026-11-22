@@ -35,7 +35,6 @@ if not TOKEN:
     log("❌ خطا: متغیر محیطی BOT_TOKEN تنظیم نشده است.")
     sys.exit(1)
 
-# اطلاعات تشخیصی: امضای واقعی کلاس‌ها در نسخه نصب‌شده
 try:
     log("ℹ️ Button:", inspect.signature(Button.__init__))
     if ButtonLink is not None:
@@ -52,32 +51,16 @@ app = BotClient(TOKEN, max_retries=10)
 # ---------------------------------------------------------
 # ساخت دکمه
 # ---------------------------------------------------------
-def link_button(btn_id: str, text: str, url: str) -> Button:
-    """دکمه لینک؛ چند حالت ممکن را امتحان می‌کند تا یکی بسازد."""
-    attempts = []
-    if ButtonLink is not None:
-        attempts.append(lambda: Button(
-            id=btn_id, type="Link", button_text=text,
-            button_link=ButtonLink(type="url", link_url=url)))
-    attempts.append(lambda: Button(id=btn_id, type="Link", button_text=text, link_url=url))
-    attempts.append(lambda: Button(id=btn_id, type="Link", button_text=text, url=url))
-
-    last_err = None
-    for make in attempts:
-        try:
-            return make()
-        except Exception as e:
-            last_err = e
-    log("❌ ساخت دکمه لینک ممکن نشد:", last_err)
-    # آخرین راه: دکمه ساده که لینک را در پیام می‌فرستد
-    return Button(id=f"url_{btn_id}", button_text=text)
-
-
 def simple_button(btn_id: str, text: str) -> Button:
-    return Button(id=btn_id, button_text=text)
+    return Button(id=btn_id, button_text=text, type="Simple")
 
 
-# لینک‌ها: id -> (متن، آدرس)؛ برای حالت جایگزین (ارسال لینک در پیام)
+def link_button(btn_id: str, text: str, url: str) -> Button:
+    # فعلاً دکمه ساده است؛ با کلیک، لینک در پیام ارسال می‌شود
+    return Button(id=f"url_{btn_id}", button_text=text, type="Simple")
+
+
+# لینک‌ها: id -> (متن، آدرس)
 LINKS = {}
 
 
@@ -87,7 +70,7 @@ def L(btn_id, text, url):
 
 
 # ---------------------------------------------------------
-# منوها (بدون resize_keyboard چون برای inline مجاز نیست)
+# منوها
 # ---------------------------------------------------------
 def main_menu() -> Keypad:
     return Keypad(rows=[
@@ -144,7 +127,6 @@ WELCOME_TEXT = (
 # هندلرها
 # ---------------------------------------------------------
 async def safe_reply(update, text, keypad=None):
-    """اگر ارسال با دکمه خطا داد، خطا را کامل چاپ می‌کند و متن ساده می‌فرستد."""
     try:
         if keypad is not None:
             await update.reply(text, inline_keypad=keypad)
@@ -191,6 +173,8 @@ def make_url_handler(btn_id, title, url):
     return handler
 
 
+# ساخت یک‌باره منو تا LINKS پر شود، سپس ثبت هندلر لینک‌ها
+main_menu()
 for _bid, (_t, _u) in list(LINKS.items()):
     make_url_handler(_bid, _t, _u)
 
@@ -206,26 +190,38 @@ async def back_to_main(client, update: Update):
 
 
 # ---------------------------------------------------------
+# تست دکمه لینک (برای تشخیص)
+# ---------------------------------------------------------
+@app.on_update(filters.commands("test2"))
+async def test2(client, update: Update):
+    U = "https://nairan.org/"
+    out = []
+    out.append("Button" + str(inspect.signature(Button.__init__)))
+    if ButtonLink is not None:
+        out.append("ButtonLink" + str(inspect.signature(ButtonLink.__init__)))
+    else:
+        out.append("ButtonLink: none")
+    variants = {
+        "v1": lambda: Button(id="a", type="Link", button_text="x",
+                             button_link=ButtonLink(type="url", link_url=U)),
+        "v2": lambda: Button(id="a", type="link", button_text="x",
+                             button_link=ButtonLink(type="url", link_url=U)),
+        "v3": lambda: Button(id="a", type="Link", button_text="x",
+                             button_link=ButtonLink(link_type="url", link_url=U)),
+    }
+    for name, make in variants.items():
+        try:
+            kp = Keypad(rows=[KeypadRow(buttons=[make()])])
+            await update.reply("تست " + name, inline_keypad=kp)
+            out.append(name + ": OK")
+        except Exception as e:
+            out.append(name + ": FAIL " + repr(e)[:120])
+    await update.reply("\n".join(out))
+
+
+# ---------------------------------------------------------
 # اجرا (polling)
 # ---------------------------------------------------------
-@app.on_update(filters.commands("test"))
-async def test_buttons(client, update: Update):
-    results = []
-    tests = {
-        "simple": lambda: Keypad(rows=[KeypadRow(buttons=[
-            Button(id="t1", button_text="تست", type="Simple")])]),
-        "simple_notype": lambda: Keypad(rows=[KeypadRow(buttons=[
-            Button(id="t2", button_text="تست")])]),
-        "link": lambda: Keypad(rows=[KeypadRow(buttons=[
-            link_button("t3", "لینک", "https://nairan.org/")])]),
-    }
-    for name, make in tests.items():
-        try:
-            await update.reply("تست " + name, inline_keypad=make())
-            results.append(name + ": OK")
-        except Exception as e:
-            results.append(name + ": FAIL " + repr(e))
-    await update.reply("\n".join(results))
 if __name__ == "__main__":
     log("✅ ربات در حالت polling اجرا شد")
     try:
