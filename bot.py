@@ -190,71 +190,45 @@ async def back_to_main(client, update: Update):
 
 
 # ---------------------------------------------------------
-# تست دکمه لینک (برای تشخیص)
+# تست‌های تشخیصی
 # ---------------------------------------------------------
-@app.on_update(filters.commands("test2"))
-async def test2(client, update: Update):
-    U = "https://nairan.org/"
-    out = []
-    out.append("Button" + str(inspect.signature(Button.__init__)))
-    if ButtonLink is not None:
-        out.append("ButtonLink" + str(inspect.signature(ButtonLink.__init__)))
-    else:
-        out.append("ButtonLink: none")
-    variants = {
-        "v1": lambda: Button(id="a", type="Link", button_text="x",
-                             button_link=ButtonLink(type="url", link_url=U)),
-        "v2": lambda: Button(id="a", type="link", button_text="x",
-                             button_link=ButtonLink(type="url", link_url=U)),
-        "v3": lambda: Button(id="a", type="Link", button_text="x",
-                             button_link=ButtonLink(link_type="url", link_url=U)),
-    }
-    for name, make in variants.items():
-        try:
-            kp = Keypad(rows=[KeypadRow(buttons=[make()])])
-            await update.reply("تست " + name, inline_keypad=kp)
-            out.append(name + ": OK")
-        except Exception as e:
-            out.append(name + ": FAIL " + repr(e)[:120])
-    await update.reply("\n".join(out))
-
-
-# ---------------------------------------------------------
-# اجرا (polling)
-# ---------------------------------------------------------
-@app.on_update()
-async def debug_all(client, update: Update):
-    log("UPDATE:", repr(update)[:600])
-import rubpy.bot.enums as E
-
-
 @app.on_update(filters.commands("test3"))
 async def test3(client, update: Update):
     out = []
-    for n in dir(E):
-        if "Button" in n and not n.startswith("_"):
-            try:
-                members = [m.name + "=" + str(m.value) for m in getattr(E, n)]
-                out.append(n + ": " + ", ".join(members)[:300])
-            except Exception as e:
-                out.append(n + " err " + repr(e)[:60])
-    out.append("reply" + str(inspect.signature(update.reply)))
+    try:
+        import rubpy.bot.enums as E
+        for n in dir(E):
+            if "Button" in n and not n.startswith("_"):
+                try:
+                    members = [m.name + "=" + str(m.value) for m in getattr(E, n)]
+                    out.append(n + ": " + ", ".join(members)[:300])
+                except Exception as e:
+                    out.append(n + " err " + repr(e)[:60])
+    except Exception as e:
+        out.append("enums err " + repr(e)[:100])
+
+    try:
+        out.append("reply" + str(inspect.signature(update.reply)))
+    except Exception as e:
+        out.append("sig err " + repr(e)[:60])
 
     U = "https://nairan.org/"
-    TE = E.ButtonTypeEnum
-    variants = {
-        "e1": lambda: Button(id="a", type=TE.Link, button_text="x",
-                             button_link=ButtonLink(type="url", link_url=U)),
-        "e2": lambda: Button(id="a", type=TE.Link, button_text="x",
-                             button_link=ButtonLink(type="Url", link_url=U)),
-    }
-    for name, make in variants.items():
-        try:
-            kp = Keypad(rows=[KeypadRow(buttons=[make()])])
-            await update.reply("تست " + name, inline_keypad=kp)
-            out.append(name + ": OK")
-        except Exception as e:
-            out.append(name + ": FAIL " + repr(e)[:100])
+    try:
+        import rubpy.bot.enums as E
+        TE = E.ButtonTypeEnum
+        variants = {
+            "e1": lambda: Button(id="a", type=TE.Link, button_text="x",
+                                 button_link=ButtonLink(type="url", link_url=U)),
+        }
+        for name, make in variants.items():
+            try:
+                kp = Keypad(rows=[KeypadRow(buttons=[make()])])
+                await update.reply("تست " + name, inline_keypad=kp)
+                out.append(name + ": OK")
+            except Exception as e:
+                out.append(name + ": FAIL " + repr(e)[:100])
+    except Exception as e:
+        out.append("enum test err " + repr(e)[:100])
 
     try:
         ck = Keypad(
@@ -266,7 +240,18 @@ async def test3(client, update: Update):
     except Exception as e:
         out.append("chat_keypad: FAIL " + repr(e)[:100])
 
-    await update.reply("\n".join(out))
+    await safe_reply(update, "\n".join(out))
+
+
+# هندلر دیباگ باید آخرین هندلر باشد
+@app.on_update()
+async def debug_all(client, update: Update):
+    log("UPDATE:", repr(update)[:600])
+
+
+# ---------------------------------------------------------
+# اجرا (polling)
+# ---------------------------------------------------------
 if __name__ == "__main__":
     log("✅ ربات در حالت polling اجرا شد")
     try:
