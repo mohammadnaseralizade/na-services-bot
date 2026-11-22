@@ -44,8 +44,6 @@ app = BotClient(TOKEN, max_retries=10)
 # توابع کمکی برای ساخت دکمه
 # ---------------------------------------------------------
 def link_button(btn_id: str, text: str, url: str) -> Button:
-    """دکمه لینک (فقط http/https)"""
-    def link_button(btn_id: str, text: str, url: str) -> Button:
     return Button(id=btn_id, button_text=text, type="link", url=url)
 
 
