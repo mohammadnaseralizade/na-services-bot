@@ -2,3 +2,4 @@ robka==2.3.4
 tqdm
 mutagen
 filetype
+pycryptodome
