@@ -68,8 +68,9 @@ def back_to_main(bot, message):
 # ثبت آدرس وبهوک برای پیام‌های معمولی
 bot.update_bot_endpoint(WEBHOOK_URL, "https://na-bot-478038e06ee7.sam.apps.haiocloud.com/webhook")
 
+
 # ثبت آدرس وبهوک برای دکمه‌های شیشه‌ای (Inline)
-bot.update_bot_inline_endpoint(WEBHOOK_URL, "webhook") 
+bot.update_bot_inline_endpoint(WEBHOOK_URL, "webhook")
 
 print("✅ ربات با موفقیت در حالت وبهوک اجرا شد.")
 bot.run()
