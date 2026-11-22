@@ -1,17 +1,20 @@
+import os
 from rubpy.bot import BotClient, filters
 from rubpy.bot.models import Keypad, KeypadRow, Button, Update
 
-# ⚠️ توکن ربات خود را اینجا قرار دهید
-TOKEN = "CJGHBB0DTAERTQQLKDBNELIGTYHNGIOWHPSPZUCLOVQKPQLIGKSIBSQBUUQOABZR"
+# ⚠️ توکن ربات و آدرس وبهوک را از متغیرهای محیطی می‌خوانیم
+TOKEN = os.getenv("BOT_TOKEN", "CJGHBB0DTAERTQQLKDBNELIGTYHNGIOWHPSPZUCLOVQKPQLIGKSIBSQBUUQOABZR")
+WEBHOOK_URL = os.getenv("WEBHOOK_URL", "https://na-bot-478038e06ee7.sam.apps.haiocloud.com/webhook")
 
-app = BotClient(TOKEN)
+# تنظیم آدرس وبهوک برای rubpy
+app = BotClient(TOKEN, webhook_url=WEBHOOK_URL)
 
 # ---------------------------------------------------------
 # ۱. منوی اصلی (شروع ربات)
 # ---------------------------------------------------------
 @app.on_update(filters.commands("start"))
 async def start(client, update: Update):
-    # ساخت دکمه‌های شیشه‌ای با استفاده از ساختار Keypad در rubpy
+    # ساخت دکمه‌های شیشه‌ای
     keypad = Keypad(
         rows=[
             KeypadRow(buttons=[Button(id="online", button_text="اطلاع از جلسات آنلاین NA", type="link", url="https://nairan1.org/onlinemeeting/")]),
@@ -35,7 +38,8 @@ async def start(client, update: Update):
 # ---------------------------------------------------------
 
 # هندلر برای دکمه "ارتباط با کنفرانس خدمات جهانی NA"
-@app.on_update(filters.callback("global_services"))
+# استفاده از filters.button به جای filters.callback
+@app.on_update(filters.button("global_services"))
 async def global_services(client, update: Update):
     email_keypad = Keypad(
         rows=[
@@ -70,7 +74,7 @@ async def global_services(client, update: Update):
     await update.reply(email_text, inline_keypad=email_keypad)
 
 # هندلر برای دکمه "بازگشت به منوی اصلی"
-@app.on_update(filters.callback("back_to_main"))
+@app.on_update(filters.button("back_to_main"))
 async def back_to_main(client, update: Update):
     # فراخوانی مجدد تابع منوی اصلی برای ارسال دوباره آن
     await start(client, update)
@@ -78,6 +82,7 @@ async def back_to_main(client, update: Update):
 # ---------------------------------------------------------
 # ۳. اجرای ربات
 # ---------------------------------------------------------
-print("✅ ربات با موفقیت در حالت وبهوک اجرا شد.")
-# متد run در rubpy به صورت خودکار تنظیمات وبهوک را انجام می‌دهد
-app.run()
+if __name__ == "__main__":
+    print("✅ ربات با موفقیت در حالت وبهوک اجرا شد.")
+    # متد run در rubpy به صورت خودکار تنظیمات وبهوک را انجام می‌دهد
+    app.run()
