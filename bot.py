@@ -208,6 +208,24 @@ async def back_to_main(client, update: Update):
 # ---------------------------------------------------------
 # اجرا (polling)
 # ---------------------------------------------------------
+@app.on_update(filters.commands("test"))
+async def test_buttons(client, update: Update):
+    results = []
+    tests = {
+        "simple": lambda: Keypad(rows=[KeypadRow(buttons=[
+            Button(id="t1", button_text="تست", type="Simple")])]),
+        "simple_notype": lambda: Keypad(rows=[KeypadRow(buttons=[
+            Button(id="t2", button_text="تست")])]),
+        "link": lambda: Keypad(rows=[KeypadRow(buttons=[
+            link_button("t3", "لینک", "https://nairan.org/")])]),
+    }
+    for name, make in tests.items():
+        try:
+            await update.reply("تست " + name, inline_keypad=make())
+            results.append(name + ": OK")
+        except Exception as e:
+            results.append(name + ": FAIL " + repr(e))
+    await update.reply("\n".join(results))
 if __name__ == "__main__":
     log("✅ ربات در حالت polling اجرا شد")
     try:
