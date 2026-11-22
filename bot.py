@@ -157,7 +157,13 @@ async def router(client, update: Update):
         title, url = SITES[text]
         await send(update, f"{title}\n{url}")
     elif text in EMAILS:
-        await send(update, f"{text}\n📧 {EMAILS[text]}")
+        email = EMAILS[text]
+        await send(
+            update,
+            f"{text}\n📧 {email}\n\n"
+            f"نوشتن ایمیل (با جیمیل):\n"
+            f"https://mail.google.com/mail/?view=cm&to={email}",
+        )
     else:
         await send(update, WELCOME_TEXT, main_keypad())
 
