@@ -4,7 +4,7 @@ from robka.button import InlineBuilder
 # ⚠️ توکن خود را اینجا قرار دهید
 TOKEN = "CJGHBB0DTAERTQQLKDBNELIGTYHNGIOWHPSPZUCLOVQKPQLIGKSIBSQBUUQOABZR"
 # آدرس وبهوک بعدا اینجا قرار می‌گیرد
-WEBHOOK_URL = "https://your-domain.haio.ir/webhook"
+WEBHOOK_URL ="https://na-bot-478038e06ee7.sam.apps.haiocloud.com/webhook"
 
 bot = Robot(TOKEN)
 
