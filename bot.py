@@ -179,10 +179,9 @@ async def back_to_main(client, update: Update):
 # اجرا (وبهوک)
 # ---------------------------------------------------------
 if __name__ == "__main__":
-    PORT = int(os.getenv("PORT", 8080))
-    log(f"✅ در حال اجرا روی پورت {PORT} | وبهوک: {WEBHOOK_URL}")
+    log("✅ ربات در حالت polling اجرا شد")
     try:
-        app.run(webhook_url=WEBHOOK_URL, path="/webhook", host="0.0.0.0", port=PORT)
+        app.run()
     except Exception:
         log("❌ خطا هنگام اجرای app.run:")
         traceback.print_exc()
