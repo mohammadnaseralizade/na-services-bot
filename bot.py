@@ -243,6 +243,59 @@ async def test3(client, update: Update):
     await safe_reply(update, "\n".join(out))
 
 
+@app.on_update(filters.commands("test4"))
+async def test4(client, update: Update):
+    import rubpy.bot.enums as E
+    TE = E.ButtonTypeEnum
+    CK = E.ChatKeypadTypeEnum
+    out = []
+    out.append("types: " + ", ".join(m.name for m in TE))
+    out.append("chatkp: " + ", ".join(m.name for m in CK))
+
+    def by_value(enum, v):
+        for m in enum:
+            if str(m.value).lower() == v:
+                return m
+        return None
+
+    link_t = by_value(TE, "link")
+    out.append("link member: " + str(link_t))
+    U = "https://nairan.org/"
+
+    if link_t is not None:
+        variants = {
+            "l1": lambda: Button(
+                id="a", type=link_t, button_text="لینک یک",
+                button_link=ButtonLink(type=E.ButtonLinkTypeEnum.URL, link_url=U)),
+            "l2": lambda: Button(
+                id="b", type=link_t, button_text="لینک دو",
+                button_link=ButtonLink(type="url", link_url=U)),
+        }
+        for name, make in variants.items():
+            try:
+                kp = Keypad(rows=[KeypadRow(buttons=[make()])])
+                await update.reply("تست " + name, inline_keypad=kp)
+                out.append(name + ": OK")
+            except Exception as e:
+                out.append(name + ": FAIL " + repr(e)[:100])
+
+    new_t = by_value(CK, "new")
+    try:
+        ck = Keypad(
+            rows=[KeypadRow(buttons=[
+                Button(id="c1", type=TE.SIMPLE, button_text="گزینه یک"),
+                Button(id="c2", type=TE.SIMPLE, button_text="گزینه دو"),
+            ])],
+            resize_keyboard=True,
+        )
+        await update.reply("کیبورد چت", chat_keypad=ck, chat_keypad_type=new_t)
+        out.append("chat_keypad: OK")
+    except Exception as e:
+        out.append("chat_keypad: FAIL " + repr(e)[:100])
+
+    await safe_reply(update, "\n".join(out))
+
+
 # هندلر دیباگ باید آخرین هندلر باشد
 @app.on_update()
 async def debug_all(client, update: Update):
